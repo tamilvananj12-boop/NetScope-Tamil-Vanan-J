@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+netscope.db
+.env
+reports/*.html
