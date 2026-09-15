@@ -1,21 +1,25 @@
 # NetScope — Local Network Service Reporter
 
-A beginner-friendly Flask web application for discovering network services on localhost and private networks.
+A beginner-friendly Flask web application for discovering network services on
+localhost and authorized private-network systems.
 
 **Author:** Tamil Vanan J
 
 ---
 
-## 📌 Overview
+## Overview
 
-NetScope is a defensive network-service discovery tool built with Python and Flask.
+NetScope is a defensive network-service discovery tool built with Python and
+Flask.
 
-It uses Nmap to identify reachable services on authorized local or private-network targets and presents the results through a simple web interface.
+It uses Nmap to identify reachable network services on authorized local or
+private-network targets and presents the results through a simple web
+interface.
 
-The application is designed for learning about:
+The project was created as a practical learning project to understand:
 
 - Network service discovery
-- Open ports and protocols
+- Open ports and network protocols
 - Service and version detection
 - Defensive security recommendations
 - SQLite database storage
@@ -24,62 +28,48 @@ The application is designed for learning about:
 
 ---
 
-## ✨ Features
+## Features
 
-- ✅ Local and private target validation
-- 🔎 Nmap service discovery
-- 🔌 Open-port summary
-- 🧩 Service and version information
-- ⏱️ Scan duration measurement
-- 🛡️ Defensive security recommendations
-- 🗄️ SQLite scan history
-- 📄 HTML report generation
-- 🌐 Simple Flask web interface
-- 🚫 Rejects invalid/public targets
+- Local and private-network target validation
+- Nmap-based service discovery
+- Open-port detection
+- Protocol identification
+- Service and version information
+- Scan duration reporting
+- Defensive security recommendations
+- SQLite scan history
+- Saved HTML reports
+- Simple browser-based interface
+- Responsible-use restrictions for public targets
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 | Technology | Purpose |
 |---|---|
 | Python | Application development |
-| Flask | Web application framework |
+| Flask | Web framework |
 | Nmap | Network service discovery |
 | python-nmap | Python interface for Nmap |
-| SQLite | Scan history database |
+| SQLite | Scan history storage |
 | HTML | Web pages and reports |
 | CSS | User interface styling |
 | Jinja2 | Flask templates |
 
 ---
 
-## 📋 Requirements
+## Requirements
 
 Before running NetScope, install:
 
 - Python 3.10 or newer
 - Nmap
-- Git
-- A modern web browser
+- Git (optional, for cloning the repository)
 
-Nmap must be installed and available from the terminal.
+Nmap must be installed and available from the system terminal.
 
-You can verify Nmap with:
+You can verify this with:
 
-```bash
+```powershell
 nmap --version
-
-## Screenshots
-
-### Home Page
-
-![NetScope Home Page](docs/screenshots/home.png)
-
-### Scan Results
-
-![NetScope Scan Results](docs/screenshots/results.png)
-
-### Scan History
-
-![NetScope Scan History](docs/screenshots/history.png)
