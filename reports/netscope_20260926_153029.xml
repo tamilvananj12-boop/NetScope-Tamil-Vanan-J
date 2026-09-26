@@ -1,0 +1,113 @@
+<?xml version='1.0' encoding='utf-8'?>
+<netscope_report>
+  <target>127.0.0.1</target>
+  <hosts>
+    <host>
+      <address>127.0.0.1</address>
+      <hostname>localhost</hostname>
+      <state>up</state>
+      <operating_system>Microsoft Windows 11 24H2 - 25H2 (100% match)</operating_system>
+    </host>
+  </hosts>
+  <scan_results>
+    <service>
+      <port>135</port>
+      <protocol>TCP</protocol>
+      <state>open</state>
+      <service_name>msrpc</service_name>
+      <product>Microsoft Windows RPC</product>
+      <version />
+      <extra_info />
+    </service>
+    <service>
+      <port>445</port>
+      <protocol>TCP</protocol>
+      <state>open</state>
+      <service_name>microsoft-ds</service_name>
+      <product />
+      <version />
+      <extra_info />
+    </service>
+    <service>
+      <port>1042</port>
+      <protocol>TCP</protocol>
+      <state>open</state>
+      <service_name>afrog</service_name>
+      <product />
+      <version />
+      <extra_info />
+    </service>
+    <service>
+      <port>5000</port>
+      <protocol>TCP</protocol>
+      <state>open</state>
+      <service_name>http</service_name>
+      <product>Werkzeug httpd</product>
+      <version>3.1.8</version>
+      <extra_info>Python 3.13.15</extra_info>
+    </service>
+    <service>
+      <port>7778</port>
+      <protocol>TCP</protocol>
+      <state>open</state>
+      <service_name>interwise</service_name>
+      <product />
+      <version />
+      <extra_info />
+    </service>
+    <service>
+      <port>137</port>
+      <protocol>UDP</protocol>
+      <state>open|filtered</state>
+      <service_name>netbios-ns</service_name>
+      <product />
+      <version />
+      <extra_info />
+    </service>
+    <service>
+      <port>1900</port>
+      <protocol>UDP</protocol>
+      <state>open|filtered</state>
+      <service_name>upnp</service_name>
+      <product />
+      <version />
+      <extra_info />
+    </service>
+    <service>
+      <port>4500</port>
+      <protocol>UDP</protocol>
+      <state>open|filtered</state>
+      <service_name>nat-t-ike</service_name>
+      <product />
+      <version />
+      <extra_info />
+    </service>
+    <service>
+      <port>5050</port>
+      <protocol>UDP</protocol>
+      <state>open|filtered</state>
+      <service_name>mmcc</service_name>
+      <product />
+      <version />
+      <extra_info />
+    </service>
+    <service>
+      <port>5353</port>
+      <protocol>UDP</protocol>
+      <state>open|filtered</state>
+      <service_name>zeroconf</service_name>
+      <product />
+      <version />
+      <extra_info />
+    </service>
+    <service>
+      <port>5355</port>
+      <protocol>UDP</protocol>
+      <state>open|filtered</state>
+      <service_name>llmnr</service_name>
+      <product />
+      <version />
+      <extra_info />
+    </service>
+  </scan_results>
+</netscope_report>
