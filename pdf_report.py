@@ -1,110 +1,100 @@
+from html import escape
+
 from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 
 
-def generate_pdf_report(
-    filename,
-    target,
-    scan_results,
-    recommendations=None
-):
-    """
-    Generate a PDF report containing scan results
-    and defensive security recommendations.
-    """
-
+def generate_pdf_report(filename, target, scan_results, recommendations=None, hosts=None):
+    """Generate a PDF report containing scan results and recommendations."""
     document = SimpleDocTemplate(
         filename,
         pagesize=A4,
-        rightMargin=40,
-        leftMargin=40,
-        topMargin=40,
-        bottomMargin=40
+        rightMargin=36,
+        leftMargin=36,
+        topMargin=36,
+        bottomMargin=36,
     )
 
     styles = getSampleStyleSheet()
-    story = []
+    story = [
+        Paragraph("NetScope — Network Scan Report", styles["Title"]),
+        Spacer(1, 0.15 * inch),
+        Paragraph(f"<b>Target:</b> {escape(str(target))}", styles["Normal"]),
+        Spacer(1, 0.12 * inch),
+    ]
 
-    story.append(
-        Paragraph("NetScope — Network Scan Report", styles["Title"])
-    )
-    story.append(Spacer(1, 0.2 * inch))
-
-    story.append(
-        Paragraph(f"<b>Target:</b> {target}", styles["Normal"])
-    )
-    story.append(Spacer(1, 0.15 * inch))
-
-    story.append(
-        Paragraph("<b>Scan Results</b>", styles["Heading2"])
-    )
-    story.append(Spacer(1, 0.1 * inch))
-
-    if scan_results:
-        for result in scan_results:
-            if isinstance(result, dict):
-                port = result.get("port", "Unknown")
-                service = result.get("service", "Unknown")
-                version = result.get("version", "")
-                state = result.get("state", "open")
-
-                text = (
-                    f"Port: {port} | State: {state} | "
-                    f"Service: {service} | Version: {version}"
-                )
-            else:
-                text = str(result)
-
-            story.append(Paragraph(text, styles["Normal"]))
-            story.append(Spacer(1, 0.08 * inch))
-    else:
-        story.append(
-            Paragraph("No open services detected.", styles["Normal"])
-        )
-
-    story.append(Spacer(1, 0.2 * inch))
-
-    story.append(
-        Paragraph(
-            "Defensive Security Recommendations",
-            styles["Heading2"]
-        )
-    )
-    story.append(Spacer(1, 0.1 * inch))
-
-    if recommendations:
-        for recommendation in recommendations:
-            if isinstance(recommendation, dict):
-                message = recommendation.get(
-                    "message",
-                    "No recommendation available."
-                )
-            else:
-                message = str(recommendation)
-
+    if hosts:
+        for host in hosts:
             story.append(
-                Paragraph(f"• {message}", styles["Normal"])
+                Paragraph(
+                    f"<b>Host:</b> {escape(str(host.get('address', 'Unknown')))} "
+                    f"| <b>State:</b> {escape(str(host.get('state', 'unknown')))} "
+                    f"| <b>OS:</b> {escape(str(host.get('os', 'Not detected')))}",
+                    styles["Normal"],
+                )
             )
-            story.append(Spacer(1, 0.08 * inch))
-    else:
-        story.append(
-            Paragraph(
-                "No specific recommendations.",
-                styles["Normal"]
-            )
+    story.append(Spacer(1, 0.15 * inch))
+    story.append(Paragraph("Port & Service Results", styles["Heading2"]))
+    story.append(Spacer(1, 0.08 * inch))
+
+    data = [["Port", "Protocol", "State", "Service", "Version"]]
+    for result in scan_results or []:
+        service = result.get("name", result.get("service", "Unknown"))
+        version = " ".join(
+            value for value in [
+                result.get("product", ""),
+                result.get("version", ""),
+                result.get("extrainfo", ""),
+            ] if value
+        ).strip() or result.get("version", "") or "Not reported"
+        data.append([
+            str(result.get("port", "Unknown")),
+            str(result.get("protocol", "TCP")),
+            str(result.get("state", "unknown")),
+            str(service),
+            version,
+        ])
+
+    if len(data) == 1:
+        data.append(["-", "-", "-", "No open services reported", "-"])
+
+    table = Table(data, repeatRows=1, colWidths=[45, 55, 55, 105, 210])
+    table.setStyle(
+        TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#e9eef5")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 8),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("BOTTOMPADDING", (0, 0), (-1, 0), 7),
+        ])
+    )
+    story.extend([table, Spacer(1, 0.2 * inch)])
+
+    story.append(Paragraph("Defensive Recommendations", styles["Heading2"]))
+    story.append(Spacer(1, 0.08 * inch))
+
+    for recommendation in recommendations or []:
+        message = (
+            recommendation.get("message", "")
+            if isinstance(recommendation, dict)
+            else str(recommendation)
         )
+        if message:
+            story.append(Paragraph(f"• {escape(message)}", styles["Normal"]))
+            story.append(Spacer(1, 0.06 * inch))
 
-    story.append(Spacer(1, 0.25 * inch))
-
+    story.append(Spacer(1, 0.2 * inch))
     story.append(
         Paragraph(
             "Generated by NetScope — Local Network Service Reporter",
-            styles["Italic"]
+            styles["Italic"],
         )
     )
 
     document.build(story)
-
     return filename

@@ -10,28 +10,31 @@
 
 **NetScope** is a local network service reporting tool designed for **defensive security learning and authorized network assessment**.
 
-The application uses **Nmap** to scan an authorized target, identifies accessible network services, stores scan history in **SQLite**, and presents the results through a simple **Flask web interface**.
+The application uses **Nmap** to scan an authorized local/private target, identify TCP and UDP services, collect service/version information, attempt OS detection, store scan history in **SQLite**, and present results through a Flask web interface.
 
-It also provides multiple report formats and defensive recommendations based on the discovered services.
+It also generates **HTML, PDF, and XML reports** and provides defensive recommendations.
 
 ---
 
 ## ✨ Features
 
-- 🔎 **Local / Private Network Scanning**
-- 🌐 **Nmap-based Port and Service Detection**
-- 📋 **Open Port and Service Reporting**
-- 🧩 **Service and Version Information**
-- 💾 **SQLite Scan History**
-- 📊 **Previous Scan Review**
-- 📝 **HTML Report Generation**
-- 📄 **PDF Report Generation**
-- 🗂️ **XML Report Generation**
-- 📧 **Email Report Support**
-- 🛡️ **Defensive Security Recommendations**
-- 🧪 **Scanner Testing**
-- 🎨 **Simple Flask Web Interface**
-- ✅ **Target Validation for Safer Use**
+- 🔎 Local / private network target validation
+- 🌐 Nmap-based port scanning
+- 🔵 TCP port scanning
+- 🟣 UDP port scanning
+- 🧩 Service detection
+- 🏷️ Service/version detection
+- 💻 Operating-system detection when supported by Nmap/permissions
+- 💾 SQLite scan history
+- 📊 Previous scan review
+- 📝 HTML report generation
+- 📄 PDF report generation
+- 🗂️ XML report generation
+- 📧 Email report support module
+- 🛡️ Defensive security recommendations
+- 🧪 Scanner tests
+- 🎨 Flask web interface
+- ⬇️ HTML/PDF/XML report download buttons
 
 ---
 
@@ -40,28 +43,25 @@ It also provides multiple report formats and defensive recommendations based on 
 ```text
 NetScope_Tamil_Vanan_J/
 │
-├── app.py                  # Main Flask application
+├── app.py                  # Main Flask application and report workflow
 ├── database.py             # SQLite database and scan history
 ├── email_report.py         # Email report functionality
 ├── pdf_report.py           # PDF report generation
 ├── recommendations.py      # Defensive recommendations
-├── scanner_test.py         # Scanner-related tests
+├── scanner_test.py         # Scanner tests
 ├── xml_report.py           # XML report generation
 ├── requirements.txt        # Python dependencies
 ├── README.md               # Project documentation
 ├── .gitignore              # Git ignored files
 │
 ├── scanner/
-│   └── ...                 # Nmap scanning components
+│   ├── __init__.py
+│   ├── nmap_scanner.py     # TCP/UDP/service/version/OS scanning
+│   └── validator.py        # Local/private target validation
 │
-├── templates/
-│   └── ...                 # Flask HTML templates
-│
-├── static/
-│   └── ...                 # CSS / static assets
-│
-├── reports/
-│   └── ...                 # Generated reports
+├── templates/              # Flask HTML templates
+├── static/                 # CSS/static assets
+├── reports/                # Generated HTML/PDF/XML reports
 │
 └── docs/
     └── screenshots/        # Project screenshots
@@ -71,66 +71,35 @@ NetScope_Tamil_Vanan_J/
 
 ## ⚙️ Requirements
 
-Before running NetScope, install:
+Install:
 
 - **Python 3**
 - **Nmap**
 - **pip**
 - A modern web browser
 
-Python dependencies are listed in:
-
-```text
-requirements.txt
-```
-
-Current project requirements include:
+Python packages are listed in `requirements.txt`:
 
 ```text
 Flask>=3.0,<4.0
 python-nmap>=0.7.1
+reportlab>=4.0,<5.0
 ```
 
-> **Note:** Nmap itself must be installed separately on the operating system.
+> **Important:** Nmap is a separate system application. Install it separately and make sure `nmap --version` works in the terminal.
 
 ---
 
 ## 🚀 Installation
 
-### 1. Clone the repository
-
 ```bash
 git clone https://github.com/tamilvananj12-boop/NetScope-Tamil-Vanan-J.git
 cd NetScope-Tamil-Vanan-J
-```
 
-### 2. Create a virtual environment
-
-```bash
 python -m venv .venv
-```
+.\\.venv\\Scripts\\Activate.ps1
 
-### 3. Activate the virtual environment
-
-**Windows PowerShell:**
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
-
-### 4. Install Python dependencies
-
-```bash
 pip install -r requirements.txt
-```
-
-### 5. Install Nmap
-
-Install Nmap separately and make sure it is available to the system.
-
-You can verify the installation with:
-
-```bash
 nmap --version
 ```
 
@@ -138,136 +107,96 @@ nmap --version
 
 ## ▶️ Run the Application
 
-Start the Flask application:
-
 ```bash
 python app.py
 ```
 
-Then open:
+Open:
 
 ```text
 http://127.0.0.1:5000/
 ```
 
-The application provides a web interface for entering an authorized target and viewing scan results.
+Enter **localhost or a private/local system you are authorized to test**.
 
 ---
 
 ## 🔍 Scanning Workflow
 
 ```text
-Authorized Target
-       │
-       ▼
-   Target Validation
-       │
-       ▼
-    Nmap Scan
-       │
-       ▼
-Open Ports & Services
-       │
-       ├───────────────┐
-       ▼               ▼
-  SQLite History   Recommendations
-       │
-       ▼
- Generate Reports
-       │
-   ┌───┼────┐
-   ▼   ▼    ▼
- HTML PDF  XML
-       │
-       ▼
-   Email Report
+Authorized Local Target
+        │
+        ▼
+ Target Validation
+        │
+        ▼
+     Nmap Scan
+   ┌────┼───────────────┐
+   ▼    ▼       ▼       ▼
+  TCP  UDP   Service   OS
+        │    Version   Detection
+        └────┬──────────┘
+             ▼
+       Scan Results
+             │
+     ┌───────┼────────┐
+     ▼       ▼        ▼
+   SQLite  Reports  Recommendations
+             │
+       ┌─────┼─────┐
+       ▼     ▼     ▼
+      HTML  PDF    XML
 ```
 
 ---
 
 ## 📊 Scan Results
 
-NetScope displays information such as:
-
 | Field | Description |
 |---|---|
 | Port | Detected network port |
-| Protocol | TCP/UDP protocol |
+| Protocol | TCP or UDP |
+| State | Port/service state |
 | Service | Service identified by Nmap |
-| Version | Detected service/version information |
+| Version | Product/version information |
+| OS | Best OS match reported by Nmap |
 
-Example services may include HTTP, Microsoft-DS, MSRPC, and other services detected by Nmap.
-
-> Results depend on the target system and the services that are accessible during the scan.
-
----
-
-## 🛡️ Defensive Recommendations
-
-NetScope provides recommendations intended to help users review exposed services.
-
-Examples include:
-
-- Review each exposed service.
-- Disable services that are not required.
-- Keep operating systems and network services patched.
-- Review detected service versions.
-- Restrict unnecessary network exposure.
-- Perform scans only on systems you are authorized to assess.
+Results depend on the target, Nmap capabilities, and permissions available to the scan.
 
 ---
 
 ## 📝 Reporting
 
-NetScope supports multiple reporting options:
-
 ### HTML Report
-
-A browser-friendly report containing scan information and defensive recommendations.
+Browser-friendly report containing host/OS information, TCP/UDP ports, services, versions, and recommendations.
 
 ### PDF Report
-
-A portable document version of the scan results.
+Portable document containing the scan results and defensive recommendations.
 
 ### XML Report
+Structured report containing host information and detailed port/service data.
 
-Structured scan information suitable for further processing.
-
-### Email Report
-
-Allows generated report information to be sent through an appropriately configured email system.
+The results page provides direct **Download HTML Report**, **Download PDF Report**, and **Download XML Report** buttons.
 
 ---
 
 ## 💾 Database
 
-NetScope uses **SQLite** to store scan history.
+NetScope uses **SQLite** to store local scan history.
 
-The database allows users to:
-
-- Store previous scan results
-- Review earlier scans
-- Maintain local scan history
-
-The database is created locally when the application is executed.
+The database stores the target, scan time, duration, number of detected services, and generated HTML report filename.
 
 ---
 
 ## 🧪 Testing
 
-The project includes:
-
-```text
-scanner_test.py
-```
-
-This file is used to test scanner-related functionality and helps verify that scanning components behave as expected.
-
-Run the test file with:
+Run:
 
 ```bash
 python scanner_test.py
 ```
+
+The tests cover basic scan data, TCP/UDP protocol handling, and OS-result parsing.
 
 ---
 
@@ -275,31 +204,26 @@ python scanner_test.py
 
 NetScope is designed for **defensive and educational purposes**.
 
-### Only scan:
+Only scan:
 
 - Your own computer
 - Your own local network
 - Private systems you are authorized to test
 - Systems where you have explicit permission
 
-### Do not:
-
-- Scan public systems without authorization
-- Scan networks that you do not own or have permission to assess
-- Use the application for unauthorized security testing
-
-Nmap must be installed separately, and scan results depend on the services available on the target.
+Do not use the application to scan public systems or networks without authorization.
 
 ---
 
 ## ⚠️ Limitations
 
 - Nmap must be installed separately.
-- Scan results depend on the target's accessible services.
+- UDP and OS detection can require elevated privileges depending on the operating system.
+- If privileged Nmap features fail, NetScope falls back to a TCP service scan so the application can still run.
+- Scan results depend on services accessible on the target.
 - Service/version detection depends on what Nmap can identify.
 - The Flask development server is intended for local/educational use, not production deployment.
-- Email reporting requires appropriate email configuration.
-- Report generation depends on the corresponding Python modules and installed dependencies.
+- Email reporting requires appropriate SMTP configuration.
 
 ---
 
@@ -311,29 +235,23 @@ Project screenshots are available in:
 docs/screenshots/
 ```
 
-These demonstrate the application's interface and scan/report workflow.
-
 ---
 
 ## 🎓 Educational Purpose
 
-This project demonstrates practical concepts including:
+This project demonstrates:
 
 - Python programming
 - Flask web development
-- Network scanning
+- TCP/UDP network scanning
 - Nmap integration
+- Service/version detection
+- OS detection
 - SQLite database management
-- Report generation
-- Basic defensive security concepts
+- HTML/PDF/XML report generation
+- Defensive security concepts
 - Automated testing
 - Responsible security practices
-
----
-
-## 📄 License
-
-This project is intended for educational and authorized security-testing purposes.
 
 ---
 
@@ -341,5 +259,4 @@ This project is intended for educational and authorized security-testing purpose
 
 **Tamil Vanan J**
 
-GitHub:  
-https://github.com/tamilvananj12-boop/NetScope-Tamil-Vanan-J
+GitHub: https://github.com/tamilvananj12-boop/NetScope-Tamil-Vanan-J

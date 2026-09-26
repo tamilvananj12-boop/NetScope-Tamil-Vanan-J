@@ -1,1 +1,69 @@
-{% extends "base.html" %}{% block content %}<h1>Scan Results</h1><p class="muted">Target: <b>{{ target }}</b></p><div class="stats"><div><strong>{{ result.hosts|length }}</strong><span>Hosts</span></div><div><strong>{{ result.services|length }}</strong><span>Services</span></div><div><strong>{{ "%.2f"|format(duration) }}s</strong><span>Duration</span></div></div><div class="card"><h2>Service Details</h2><table><tr><th>Port</th><th>Protocol</th><th>Service</th><th>Version</th></tr>{% for item in result.services %}<tr><td>{{ item.port }}</td><td>{{ item.protocol }}</td><td>{{ item.name }}</td><td>{{ (item.product ~ " " ~ item.version).strip() or "Not reported" }}</td></tr>{% else %}<tr><td colspan="4">No open services reported.</td></tr>{% endfor %}</table></div><div class="card"><h2>Defensive Recommendations</h2><ul>{% for tip in tips %}<li>{{ tip }}</li>{% endfor %}</ul><a class="button" href="{{ url_for('reports',filename=report_file) }}">Download HTML Report</a></div>{% endblock %}
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">SCAN COMPLETE</p>
+  <h1>Network Scan Results</h1>
+  <p>Target: <strong>{{ target }}</strong></p>
+</section>
+
+<div class="stats">
+  <div><strong>{{ result.hosts|length }}</strong><span>Hosts</span></div>
+  <div><strong>{{ result.services|length }}</strong><span>Services</span></div>
+  <div><strong>{{ result.services|selectattr("protocol", "equalto", "TCP")|list|length }}</strong><span>TCP</span></div>
+  <div><strong>{{ result.services|selectattr("protocol", "equalto", "UDP")|list|length }}</strong><span>UDP</span></div>
+  <div><strong>{{ "%.2f"|format(duration) }}s</strong><span>Duration</span></div>
+</div>
+
+{% if result.scan_note %}
+<div class="alert">
+  Some Nmap features required elevated privileges, so the application used a TCP service-scan fallback.
+</div>
+{% endif %}
+
+{% for host in result.hosts %}
+<div class="card">
+  <h2>Host Information</h2>
+  <p><strong>Address:</strong> {{ host.address }}</p>
+  <p><strong>Hostname:</strong> {{ host.hostname or "N/A" }}</p>
+  <p><strong>State:</strong> {{ host.state }}</p>
+  <p><strong>Operating System:</strong> {{ host.os }}</p>
+</div>
+{% endfor %}
+
+<div class="card">
+  <h2>Port & Service Details</h2>
+  <table>
+    <tr>
+      <th>Port</th><th>Protocol</th><th>State</th><th>Service</th><th>Version</th>
+    </tr>
+    {% for item in result.services %}
+    <tr>
+      <td>{{ item.port }}</td>
+      <td>{{ item.protocol }}</td>
+      <td>{{ item.state }}</td>
+      <td>{{ item.name }}</td>
+      <td>
+        {{ (item.product ~ " " ~ item.version ~ " " ~ item.extrainfo).strip() or "Not reported" }}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">No open services reported.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h2>Defensive Recommendations</h2>
+  <ul>
+    {% for tip in tips %}
+    <li>{{ tip }}</li>
+    {% endfor %}
+  </ul>
+
+  <div class="report-actions">
+    <a class="button" href="{{ url_for('reports', filename=report_file) }}">Download HTML Report</a>
+    <a class="button" href="{{ url_for('reports', filename=pdf_report_file) }}">Download PDF Report</a>
+    <a class="button" href="{{ url_for('reports', filename=xml_report_file) }}">Download XML Report</a>
+  </div>
+</div>
+{% endblock %}

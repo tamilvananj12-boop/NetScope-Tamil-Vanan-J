@@ -1,4 +1,5 @@
 from datetime import datetime
+from html import escape
 from pathlib import Path
 from time import perf_counter
 
@@ -13,8 +14,11 @@ from flask import (
 )
 
 from database import init_db, list_scans, save_scan
+from pdf_report import generate_pdf_report
+from recommendations import get_recommendations
 from scanner.nmap_scanner import run_service_scan
 from scanner.validator import is_allowed_target
+from xml_report import generate_xml_report
 
 
 app = Flask(__name__)
@@ -25,150 +29,110 @@ REPORT_DIR.mkdir(exist_ok=True)
 
 
 def recommendations(services):
-    """Generate defensive recommendations from discovered services."""
+    """Generate simple defensive recommendations for the web UI."""
     tips = []
     names = {service["name"].lower() for service in services}
 
     if services:
-        tips.append(
-            "Review each exposed service and disable services that are not required."
-        )
+        tips.append("Review each exposed service and disable services that are not required.")
     else:
         tips.append("No open services were reported by the scan.")
 
     if "telnet" in names:
-        tips.append(
-            "Replace Telnet with a secure remote-management method where possible."
-        )
-
+        tips.append("Replace Telnet with a secure remote-management method where possible.")
     if "ftp" in names:
-        tips.append(
-            "Review FTP usage and prefer encrypted file-transfer methods."
-        )
-
+        tips.append("Review FTP usage and prefer encrypted file-transfer methods.")
     if any(service["port"] in {22, 3389} for service in services):
-        tips.append(
-            "Restrict remote-administration services to trusted systems."
-        )
+        tips.append("Restrict remote-administration services to trusted systems.")
 
-    tips.append(
-        "Keep operating systems and network services patched and updated."
-    )
-
+    tips.append("Keep operating systems and network services patched and updated.")
     return tips
 
 
-def create_report(target, result, duration, tips, filename):
+def create_html_report(target, result, duration, tips, filename):
     """Create a standalone HTML report for a completed scan."""
     rows = []
 
     for service in result["services"]:
-        version = (
-            f'{service["product"]} {service["version"]}'
+        version = " ".join(
+            value for value in [
+                service.get("product", ""),
+                service.get("version", ""),
+                service.get("extrainfo", ""),
+            ] if value
         ).strip() or "Not reported"
 
         rows.append(
             "<tr>"
-            f'<td>{service["port"]}</td>'
-            f'<td>{service["protocol"]}</td>'
-            f'<td>{service["name"]}</td>'
-            f"<td>{version}</td>"
+            f"<td>{escape(str(service['port']))}</td>"
+            f"<td>{escape(str(service['protocol']))}</td>"
+            f"<td>{escape(str(service['state']))}</td>"
+            f"<td>{escape(str(service['name']))}</td>"
+            f"<td>{escape(version)}</td>"
             "</tr>"
         )
 
-    html = """<!doctype html>
+    host_rows = []
+    for host in result["hosts"]:
+        host_rows.append(
+            "<tr>"
+            f"<td>{escape(str(host.get('address', '')))}</td>"
+            f"<td>{escape(str(host.get('hostname', '')) or 'N/A')}</td>"
+            f"<td>{escape(str(host.get('state', '')))}</td>"
+            f"<td>{escape(str(host.get('os', 'Not detected')))}</td>"
+            "</tr>"
+        )
+
+    notes = "".join(f"<li>{escape(tip)}</li>" for tip in tips)
+
+    html = f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NetScope Report</title>
 <style>
-body {
-    font-family: Arial, sans-serif;
-    max-width: 960px;
-    margin: 40px auto;
-    padding: 0 20px;
-}
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-th, td {
-    border: 1px solid #ccc;
-    padding: 8px;
-    text-align: left;
-}
-th {
-    background: #f2f2f2;
-}
-li {
-    margin: 8px 0;
-}
+body{{font-family:Arial,sans-serif;max-width:1050px;margin:40px auto;padding:0 20px;line-height:1.5}}
+table{{width:100%;border-collapse:collapse;margin:16px 0 28px}}
+th,td{{border:1px solid #ccc;padding:8px;text-align:left}}
+th{{background:#eef2f7}}
+li{{margin:8px 0}}
 </style>
 </head>
 <body>
 <h1>NetScope — Local Network Service Report</h1>
-<p><strong>Target:</strong> __TARGET__</p>
-<p><strong>Generated:</strong> __DATE__</p>
-<p><strong>Duration:</strong> __DURATION__ seconds</p>
-<p><strong>Services found:</strong> __COUNT__</p>
+<p><strong>Target:</strong> {escape(target)}</p>
+<p><strong>Generated:</strong> {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
+<p><strong>Duration:</strong> {duration:.2f} seconds</p>
+<p><strong>Scan method:</strong> {escape(result.get("scan_arguments", ""))}</p>
 
-<h2>Discovered Services</h2>
+<h2>Host & OS Information</h2>
 <table>
-<thead>
-<tr>
-<th>Port</th>
-<th>Protocol</th>
-<th>Service</th>
-<th>Version</th>
-</tr>
-</thead>
-<tbody>
-__TABLE__
-</tbody>
+<thead><tr><th>Address</th><th>Hostname</th><th>State</th><th>Operating System</th></tr></thead>
+<tbody>{''.join(host_rows) or '<tr><td colspan="4">No host information reported.</td></tr>'}</tbody>
+</table>
+
+<h2>Port, Protocol & Service Results</h2>
+<table>
+<thead><tr><th>Port</th><th>Protocol</th><th>State</th><th>Service</th><th>Version</th></tr></thead>
+<tbody>{''.join(rows) or '<tr><td colspan="5">No open services reported.</td></tr>'}</tbody>
 </table>
 
 <h2>Defensive Recommendations</h2>
-<ul>
-__NOTES__
-</ul>
+<ul>{notes}</ul>
 </body>
-</html>
-"""
+</html>"""
 
-    notes = "".join(f"<li>{tip}</li>" for tip in tips)
-
-    html = html.replace("__TARGET__", target)
-    html = html.replace(
-        "__DATE__",
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-    )
-    html = html.replace("__DURATION__", f"{duration:.2f}")
-    html = html.replace(
-        "__COUNT__",
-        str(len(result["services"])),
-    )
-    html = html.replace("__TABLE__", "".join(rows))
-    html = html.replace("__NOTES__", notes)
-
-    (REPORT_DIR / filename).write_text(
-        html,
-        encoding="utf-8",
-    )
+    (REPORT_DIR / filename).write_text(html, encoding="utf-8")
 
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    """Display the scan form and process scan requests."""
     if request.method == "POST":
         target = request.form.get("target", "").strip()
 
         if not is_allowed_target(target):
-            flash(
-                "Enter localhost or a private/local target "
-                "you are authorized to test."
-            )
+            flash("Enter localhost or a private/local target you are authorized to test.")
             return redirect(url_for("index"))
 
         started = perf_counter()
@@ -181,17 +145,30 @@ def index():
 
         duration = perf_counter() - started
         tips = recommendations(result["services"])
-
-        filename = (
-            f'netscope_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html'
+        detailed_recommendations = get_recommendations(
+            [service["port"] for service in result["services"]]
         )
 
-        create_report(
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        html_filename = f"netscope_{timestamp}.html"
+        pdf_filename = f"netscope_{timestamp}.pdf"
+        xml_filename = f"netscope_{timestamp}.xml"
+
+        create_html_report(target, result, duration, tips, html_filename)
+
+        generate_pdf_report(
+            str(REPORT_DIR / pdf_filename),
             target,
-            result,
-            duration,
-            tips,
-            filename,
+            result["services"],
+            detailed_recommendations,
+            result["hosts"],
+        )
+
+        generate_xml_report(
+            str(REPORT_DIR / xml_filename),
+            target,
+            result["services"],
+            result["hosts"],
         )
 
         save_scan(
@@ -199,7 +176,7 @@ def index():
             datetime.now().isoformat(timespec="seconds"),
             duration,
             len(result["services"]),
-            filename,
+            html_filename,
         )
 
         return render_template(
@@ -208,7 +185,9 @@ def index():
             result=result,
             duration=duration,
             tips=tips,
-            report_file=filename,
+            report_file=html_filename,
+            pdf_report_file=pdf_filename,
+            xml_report_file=xml_filename,
         )
 
     return render_template("index.html")
@@ -216,23 +195,14 @@ def index():
 
 @app.route("/history")
 def history():
-    """Display previous scan history."""
-    return render_template(
-        "history.html",
-        scans=list_scans(),
-    )
+    return render_template("history.html", scans=list_scans())
 
 
 @app.route("/reports/<path:filename>")
 def reports(filename):
-    """Serve generated HTML reports."""
-    return send_from_directory(
-        REPORT_DIR,
-        filename,
-        as_attachment=True,
-    )
+    return send_from_directory(REPORT_DIR, filename, as_attachment=True)
 
 
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=5000,debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
